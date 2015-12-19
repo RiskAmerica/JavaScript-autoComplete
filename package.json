@@ -1,0 +1,18 @@
+{
+    "name": "javascript-auto-complete",
+    "version": "1.0.3",
+    "description": "An extremely lightweight vanilla JavaScript completion suggester.",
+    "main": "Gruntfile.js",
+    "homepage": "https://github.com/Pixabay/JavaScript-autoComplete",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": {
+        "name": "Simon Steinberger",
+        "url": "https://pixabay.com/users/Simon/",
+        "email": "simon@pixabay.com"
+    },
+    "license": "MIT",
+    "dependencies": {},
+    "devDependencies": {}
+}
