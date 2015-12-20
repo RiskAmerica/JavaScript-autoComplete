@@ -9,6 +9,8 @@ var autoComplete = (function(){
     // "use strict";
     function autoComplete(options){
         if (!document.querySelector) return;
+        
+        var liveEvents = [];
 
         // helpers
         function hasClass(el, className){ return el.classList ? el.classList.contains(className) : new RegExp('\\b'+ className+'\\b').test(el.className); }
@@ -21,10 +23,17 @@ var autoComplete = (function(){
             if (el.detachEvent) el.detachEvent('on'+type, handler); else el.removeEventListener(type, handler);
         }
         function live(elClass, event, cb, context){
-            addEvent(context || document, event, function(e){
+            context = context || document;
+            var listener = function(e){
                 var found, el = e.target || e.srcElement;
                 while (el && !(found = hasClass(el, elClass))) el = el.parentElement;
                 if (found) cb.call(el, e);
+            };
+            addEvent(context, event, listener);
+            liveEvents.push({
+                context: context,
+                event: event,
+                listener: listener
             });
         }
 
@@ -41,7 +50,8 @@ var autoComplete = (function(){
                 var re = new RegExp("(" + search.split(' ').join('|') + ")", "gi");
                 return '<div class="autocomplete-suggestion" data-val="' + item + '">' + item.replace(re, "<b>$1</b>") + '</div>';
             },
-            onSelect: function(e, term, item){}
+            onSelect: function(e, term, item){},
+            popupContainer: document.body
         };
         for (var k in options) { if (options.hasOwnProperty(k)) o[k] = options[k]; }
 
@@ -80,16 +90,16 @@ var autoComplete = (function(){
                 }
             }
             addEvent(window, 'resize', that.updateSC);
-            document.body.appendChild(that.sc);
+            o.popupContainer.appendChild(that.sc);
 
             live('autocomplete-suggestion', 'mouseleave', function(e){
                 var sel = that.sc.querySelector('.autocomplete-suggestion.selected');
-                if (sel) setTimeout(function(){ sel.className = sel.className.replace('selected', ''); }, 20);
+                if (sel) setTimeout(function(){ sel.className = sel.className.replace(/\s*selected/, ''); }, 20);
             }, that.sc);
 
             live('autocomplete-suggestion', 'mouseover', function(e){
                 var sel = that.sc.querySelector('.autocomplete-suggestion.selected');
-                if (sel) sel.className = sel.className.replace('selected', '');
+                if (sel) sel.className = sel.className.replace(/\s*selected/, '');
                 this.className += ' selected';
             }, that.sc);
 
@@ -137,11 +147,11 @@ var autoComplete = (function(){
                     } else {
                         next = (key == 40) ? sel.nextSibling : sel.previousSibling;
                         if (next) {
-                            sel.className = sel.className.replace('selected', '');
+                            sel.className = sel.className.replace(/\s*selected/, '');
                             next.className += ' selected';
                             that.value = next.getAttribute('data-val');
                         }
-                        else { sel.className = sel.className.replace('selected', ''); that.value = that.last_val; next = 0; }
+                        else { sel.className = sel.className.replace(/\s*selected/, ''); that.value = that.last_val; next = 0; }
                     }
                     that.updateSC(0, next);
                     return false;
@@ -198,11 +208,15 @@ var autoComplete = (function(){
                 removeEvent(that, 'focus', that.focusHandler);
                 removeEvent(that, 'keydown', that.keydownHandler);
                 removeEvent(that, 'keyup', that.keyupHandler);
+                for (var i = 0; i < liveEvents.length; i++) {
+                    var liveEvent = liveEvents[i];
+                    removeEvent(liveEvent.context, liveEvent.event, liveEvent.listener);
+                }
                 if (that.autocompleteAttr)
                     that.setAttribute('autocomplete', that.autocompleteAttr);
                 else
                     that.removeAttribute('autocomplete');
-                document.body.removeChild(that.sc);
+                that.sc.parentNode.removeChild(that.sc);
                 that = null;
             }
         };
