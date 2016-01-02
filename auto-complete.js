@@ -5,8 +5,46 @@
     License: http://www.opensource.org/licenses/mit-license.php
 */
 
+/* global define */
+
 var autoComplete = (function(){
-    // "use strict";
+    
+    "use strict";
+    
+    /**
+     * An object containing the request callback and configuration.
+     * 
+     * @constructor
+     * @class Request
+     * @param {Element} element The autoComplete element
+     * @param {Object} config The configuration
+     * @param {String} term The search term
+     */
+    function Request(element, config, term) {
+        this.element = element;
+        this.config = config;
+        this.term = term;
+    }
+    
+    Request.prototype.callback = function(data) {
+        var self = this,
+                element = self.element,
+                term = self.term,
+                config = self.config;
+        element.cache[term] = data;
+        if (data.length && term.length >= config.minChars) {
+            var s = '';
+            for (var i=0;i<data.length;i++) {
+                s += config.renderItem(data[i], term);
+            }
+            element.sc.innerHTML = s;
+            element.updateSC(0);
+        }
+        else {
+            element.sc.style.display = 'none';
+        }
+    };
+    
     function autoComplete(options){
         if (!document.querySelector) return;
         
@@ -56,7 +94,7 @@ var autoComplete = (function(){
         for (var k in options) { if (options.hasOwnProperty(k)) o[k] = options[k]; }
 
         // init
-        var elems = typeof o.selector == 'object' ? [o.selector] : document.querySelectorAll(o.selector);
+        var elems = typeof o.selector === 'object' ? [o.selector] : document.querySelectorAll(o.selector);
         for (var i=0; i<elems.length; i++) {
             var that = elems[i];
 
@@ -88,7 +126,8 @@ var autoComplete = (function(){
                                 that.sc.scrollTop = selTop + scrTop;
                         }
                 }
-            }
+            };
+            
             addEvent(window, 'resize', that.updateSC);
             o.popupContainer.appendChild(that.sc);
 
@@ -122,30 +161,17 @@ var autoComplete = (function(){
             };
             addEvent(that, 'blur', that.blurHandler);
 
-            var suggest = function(data){
-                var val = that.value;
-                that.cache[val] = data;
-                if (data.length && val.length >= o.minChars) {
-                    var s = '';
-                    for (var i=0;i<data.length;i++) s += o.renderItem(data[i], val);
-                    that.sc.innerHTML = s;
-                    that.updateSC(0);
-                }
-                else
-                    that.sc.style.display = 'none';
-            }
-
             that.keydownHandler = function(e){
                 var key = window.event ? e.keyCode : e.which;
                 // down (40), up (38)
-                if ((key == 40 || key == 38) && that.sc.innerHTML) {
+                if ((key === 40 || key === 38) && that.sc.innerHTML) {
                     var next, sel = that.sc.querySelector('.autocomplete-suggestion.selected');
                     if (!sel) {
-                        next = (key == 40) ? that.sc.querySelector('.autocomplete-suggestion') : that.sc.childNodes[that.sc.childNodes.length - 1]; // first : last
+                        next = (key === 40) ? that.sc.querySelector('.autocomplete-suggestion') : that.sc.childNodes[that.sc.childNodes.length - 1]; // first : last
                         next.className += ' selected';
                         that.value = next.getAttribute('data-val');
                     } else {
-                        next = (key == 40) ? sel.nextSibling : sel.previousSibling;
+                        next = (key === 40) ? sel.nextSibling : sel.previousSibling;
                         if (next) {
                             sel.className = sel.className.replace(/\s*selected/, '');
                             next.className += ' selected';
@@ -157,32 +183,43 @@ var autoComplete = (function(){
                     return false;
                 }
                 // esc
-                else if (key == 27) { that.value = that.last_val; that.sc.style.display = 'none'; }
+                else if (key === 27) { that.value = that.last_val; that.sc.style.display = 'none'; }
                 // enter
-                else if (key == 13 || key == 9) {
+                else if (key === 13 || key === 9) {
                     var sel = that.sc.querySelector('.autocomplete-suggestion.selected');
-                    if (sel && that.sc.style.display != 'none') { o.onSelect(e, sel.getAttribute('data-val'), sel); setTimeout(function(){ that.sc.style.display = 'none'; }, 20); }
+                    if (sel && that.sc.style.display !== 'none') { o.onSelect(e, sel.getAttribute('data-val'), sel); setTimeout(function(){ that.sc.style.display = 'none'; }, 20); }
                 }
             };
             addEvent(that, 'keydown', that.keydownHandler);
 
             that.keyupHandler = function(e){
                 var key = window.event ? e.keyCode : e.which;
-                if (!key || (key < 35 || key > 40) && key != 13 && key != 27) {
+                if (!key || (key < 35 || key > 40) && key !== 13 && key !== 27) {
                     var val = that.value;
                     if (val.length >= o.minChars) {
-                        if (val != that.last_val) {
+                        if (val !== that.last_val) {
                             that.last_val = val;
                             clearTimeout(that.timer);
+                            var request = new Request(that, o, val);
                             if (o.cache) {
-                                if (val in that.cache) { suggest(that.cache[val]); return; }
+                                if (val in that.cache) {
+                                    request.callback(that.cache[val]);
+                                    return;
+                                }
                                 // no requests if previous suggestions were empty
                                 for (var i=1; i<val.length-o.minChars; i++) {
                                     var part = val.slice(0, val.length-i);
-                                    if (part in that.cache && !that.cache[part].length) { suggest([]); return; }
+                                    if (part in that.cache && !that.cache[part].length) {
+                                        request.callback([]);
+                                        return;
+                                    }
                                 }
                             }
-                            that.timer = setTimeout(function(){ o.source(val, suggest) }, o.delay);
+                            that.timer = setTimeout(function(){
+                                o.source(val, function() {
+                                    request.callback.apply(request, arguments);
+                                }); 
+                            }, o.delay);
                         }
                     } else {
                         that.last_val = val;
@@ -194,7 +231,7 @@ var autoComplete = (function(){
 
             that.focusHandler = function(e){
                 that.last_val = '\n';
-                that.keyupHandler(e)
+                that.keyupHandler(e);
             };
             if (!o.minChars) addEvent(that, 'focus', that.focusHandler);
         }
