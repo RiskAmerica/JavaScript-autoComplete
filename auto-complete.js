@@ -11,40 +11,6 @@ var autoComplete = (function(){
     
     "use strict";
     
-    /**
-     * An object containing the request callback and configuration.
-     * 
-     * @constructor
-     * @class Request
-     * @param {Element} element The autoComplete element
-     * @param {Object} config The configuration
-     * @param {String} term The search term
-     */
-    function Request(element, config, term) {
-        this.element = element;
-        this.config = config;
-        this.term = term;
-    }
-    
-    Request.prototype.callback = function(data) {
-        var self = this,
-                element = self.element,
-                term = self.term,
-                config = self.config;
-        element.cache[term] = data;
-        if (data.length && term.length >= config.minChars) {
-            var s = '';
-            for (var i=0;i<data.length;i++) {
-                s += config.renderItem(data[i], term);
-            }
-            element.sc.innerHTML = s;
-            element.updateSC(0);
-        }
-        else {
-            element.sc.style.display = 'none';
-        }
-    };
-    
     function autoComplete(options){
         if (!document.querySelector) return;
         
@@ -160,6 +126,18 @@ var autoComplete = (function(){
                 } else if (that !== document.activeElement) setTimeout(function(){ that.focus(); }, 20);
             };
             addEvent(that, 'blur', that.blurHandler);
+            
+            var suggest = function(val, data){
+                that.cache[val] = data;
+                if (data.length && val.length >= o.minChars) {
+                    var s = '';
+                    for (var i=0;i<data.length;i++) s += o.renderItem(data[i], val);
+                    that.sc.innerHTML = s;
+                    that.updateSC(0);
+                }
+                else
+                    that.sc.style.display = 'none';
+            }
 
             that.keydownHandler = function(e){
                 var key = window.event ? e.keyCode : e.which;
@@ -200,24 +178,23 @@ var autoComplete = (function(){
                         if (val !== that.last_val) {
                             that.last_val = val;
                             clearTimeout(that.timer);
-                            var request = new Request(that, o, val);
                             if (o.cache) {
                                 if (val in that.cache) {
-                                    request.callback(that.cache[val]);
+                                    suggest(val, that.cache[val]);
                                     return;
                                 }
                                 // no requests if previous suggestions were empty
                                 for (var i=1; i<val.length-o.minChars; i++) {
                                     var part = val.slice(0, val.length-i);
                                     if (part in that.cache && !that.cache[part].length) {
-                                        request.callback([]);
+                                        suggest(val, []);
                                         return;
                                     }
                                 }
                             }
                             that.timer = setTimeout(function(){
-                                o.source(val, function() {
-                                    request.callback.apply(request, arguments);
+                                o.source(val, function(data) {
+                                    suggest(val, data);
                                 }); 
                             }, o.delay);
                         }
