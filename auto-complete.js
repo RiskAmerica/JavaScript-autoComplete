@@ -254,13 +254,15 @@
             }
 
             for (var k = 0; k < instances.length; k++) {
-                var instance = instances[k];
+                var instance = instances[k],
+                        textField = instance.textField;
                 if (instance.autocompleteAttr) {
-                    instance.setAttribute('autocomplete', instance.autocompleteAttr);
+                    textField.setAttribute('autocomplete', instance.autocompleteAttr);
                 } else {
-                    instance.removeAttribute('autocomplete');
+                    textField.removeAttribute('autocomplete');
                 }
-                instance.suggestionsContainer.parentNode.removeChild(instances.sc);
+                instance.suggestionsContainer.parentNode.removeChild(
+                        instance.suggestionsContainer);
                 this.instances = null;
             }
         },
