@@ -100,7 +100,7 @@
                 this.addEvent(textField, 'blur', this.onBlur, eventData);
                 this.addEvent(textField, 'keydown', this.onKeyDown, eventData);
                 this.addEvent(textField, 'keyup', this.onKeyUp, eventData);
-                if (!settings.minChars) {
+                if (!settings.minChars) { 
                     this.addEvent(textField, 'focus', this.onFocus, eventData);
                 }
 
@@ -164,7 +164,9 @@
         suggest: function (instance, term, suggestions) {
             var sc = instance.suggestionsContainer,
                     settings = this.settings;
-            instance.cache[term] = suggestions;
+            if (settings.cache) {
+                instance.cache[term] = suggestions;
+            }
             if (suggestions.length && term.length >= settings.minChars) {
                 var s = '';
                 for (var i = 0; i < suggestions.length; i++) {
@@ -199,10 +201,11 @@
                         return handler.call(self, this, e, data);
                     };
             for (var i = 0; i < types.length; i++) {
+                var _type = types[i];
                 if (el.attachEvent) {
-                    el.attachEvent('on' + types[i], listener);
+                    el.attachEvent('on' + _type, listener);
                 } else {
-                    el.addEventListener(types[i], listener);
+                    el.addEventListener(_type, listener);
                 }
             }
             this.eventHandlers.push({
@@ -223,10 +226,11 @@
         removeEvent: function (el, type, handler) {
             var types = type.split(' ');
             for (var i = 0; i < types.length; i++) {
+                var _type = types[i];
                 if (el.detachEvent) {
-                    el.detachEvent('on' + types[i], handler);
+                    el.detachEvent('on' + _type, handler);
                 } else {
-                    el.removeEventListener(types[i], handler);
+                    el.removeEventListener(_type, handler);
                 }
             }
         },
@@ -263,7 +267,7 @@
                 }
                 instance.suggestionsContainer.parentNode.removeChild(
                         instance.suggestionsContainer);
-                this.instances = null;
+                delete textField.autoCompleteInstance;
             }
         },
         onResize: function (el, ev, data) {
