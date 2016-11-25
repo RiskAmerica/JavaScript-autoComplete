@@ -35,6 +35,7 @@
             return;
         }
 
+
         this.settings = this.buildSettings(options);
         this.eventHandlers = [];
         this.instances = this.createInstances(this.settings.selector);
@@ -59,7 +60,9 @@
                         '</div>';
             },
             onSelect: function (e, term, item) {},
-            popupContainer: document.body
+            popupContainer: document.body,
+            classDisabled : 'disabled',
+            classSeparator : 'separator'
         },
         buildSettings: function (options) {
             var settings = {},
@@ -334,25 +337,19 @@
                     self = this;
             // down (40), up (38)
             if ((key === 40 || key === 38) && sc.innerHTML) {
-                var next;
                 selected = sc.querySelector('.autocomplete-suggestion.selected');
-                if (!selected) {
-                    next = (key === 40) ?
-                            sc.querySelector('.autocomplete-suggestion') :
-                            sc.childNodes[sc.childNodes.length - 1]; // first : last
+                var next=(key === 40) ?
+                    this.findDown(data,selected) :
+                    this.findUp(data,selected) ;
+                if (selected) {
+                    selected.className = selected.className.replace(/\s*selected/, '');
+                }
+                if (next) {
                     next.className += ' selected';
                     el.value = next.getAttribute('data-val');
                 } else {
-                    next = (key === 40) ? selected.nextSibling : selected.previousSibling;
-                    if (next) {
-                        selected.className = selected.className.replace(/\s*selected/, '');
-                        next.className += ' selected';
-                        el.value = next.getAttribute('data-val');
-                    } else {
-                        selected.className = selected.className.replace(/\s*selected/, '');
-                        el.value = instance.lastVal;
-                        next = 0;
-                    }
+                    el.value = instance.lastVal;
+                    next = 0;
                 }
                 this.updateSuggestionsContainer(instance, false, next);
                 return false;
@@ -410,6 +407,46 @@
         onFocus: function (el, ev, data) {
             data.instance.lastVal = '\n';
             this.onKeyUp.call(this, el, ev, data);
+        },
+        findDown: function(data, selected){
+            var instance = data.instance,
+                sc = instance.suggestionsContainer;
+            if(!selected)
+            {
+                for(var i=0; i < sc.childNodes.length;i++){
+                    if(!this.hasClass(sc.childNodes[i],this.settings.classDisabled)
+                        || !this.hasClass(sc.childNodes[i],this.settings.classSeparator)){
+                        return sc.childNodes[i];
+                    }
+                }
+            }
+            var next=selected.nextSibling;
+            while(next && (this.hasClass(sc.childNodes[i],this.settings.classDisabled) || this.hasClass(sc.childNodes[i],this.settings.classSeparator)))
+            {
+                next=next.nextSibling
+            }
+            return next;
+
+        },
+        findUp: function(data, selected){
+            var instance = data.instance,
+                sc = instance.suggestionsContainer;
+            if(!selected)
+            {
+                for(var i=sc.childNodes.length-1; i >=0 ;i--){
+                    if(!this.hasClass(sc.childNodes[i],this.settings.classDisabled)
+                        || !this.hasClass(sc.childNodes[i],this.settings.classSeparator)){
+                        return sc.childNodes[i];
+                    }
+                }
+            }
+            var previous=selected.previousSibling;
+            while(previous && (this.hasClass(sc.childNodes[i],this.settings.classDisabled) || this.hasClass(sc.childNodes[i],this.settings.classSeparator)))
+            {
+                previous=previous.previousSibling
+            }
+            return previous;
+
         }
     };
 
