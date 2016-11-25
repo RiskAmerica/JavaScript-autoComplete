@@ -421,7 +421,9 @@
                 }
             }
             var next=selected.nextSibling;
-            while(next && (this.hasClass(sc.childNodes[i],this.settings.classDisabled) || this.hasClass(sc.childNodes[i],this.settings.classSeparator)))
+            while(next &&
+                (this.hasClass(next,this.settings.classDisabled)
+                || this.hasClass(next,this.settings.classSeparator)))
             {
                 next=next.nextSibling
             }
@@ -441,7 +443,7 @@
                 }
             }
             var previous=selected.previousSibling;
-            while(previous && (this.hasClass(sc.childNodes[i],this.settings.classDisabled) || this.hasClass(sc.childNodes[i],this.settings.classSeparator)))
+            while(previous && (this.hasClass(previous,this.settings.classDisabled) || this.hasClass(previous,this.settings.classSeparator)))
             {
                 previous=previous.previousSibling
             }
