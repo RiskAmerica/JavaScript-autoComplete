@@ -411,9 +411,10 @@
         findDown: function(data, selected){
             var instance = data.instance,
                 sc = instance.suggestionsContainer;
+            var total = sc.childNodes.length;
             if(!selected)
             {
-                for(var i=0; i < sc.childNodes.length;i++){
+                for(var i=0; i < total ;i++){
                     if(!this.hasClass(sc.childNodes[i],this.settings.classDisabled)
                         || !this.hasClass(sc.childNodes[i],this.settings.classSeparator)){
                         return sc.childNodes[i];
@@ -433,9 +434,10 @@
         findUp: function(data, selected){
             var instance = data.instance,
                 sc = instance.suggestionsContainer;
+            var total = sc.childNodes.length-1;
             if(!selected)
             {
-                for(var i=sc.childNodes.length-1; i >=0 ;i--){
+                for(var i=total; i >=0 ;i--){
                     if(!this.hasClass(sc.childNodes[i],this.settings.classDisabled)
                         || !this.hasClass(sc.childNodes[i],this.settings.classSeparator)){
                         return sc.childNodes[i];
