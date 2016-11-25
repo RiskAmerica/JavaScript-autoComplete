@@ -428,7 +428,8 @@
             {
                 next=next.nextSibling
             }
-            return next;
+            return (!this.hasClass(next,this.settings.classDisabled)
+            || !this.hasClass(next,this.settings.classSeparator)) ? next : null;
 
         },
         findUp: function(data, selected){
@@ -449,8 +450,8 @@
             {
                 previous=previous.previousSibling
             }
-            return previous;
-
+            return (!this.hasClass(previous,this.settings.classDisabled)
+            || !this.hasClass(previous,this.settings.classSeparator)) ? previous : null;
         }
     };
 
